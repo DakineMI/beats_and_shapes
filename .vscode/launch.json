@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:beats_and_shapes}/BeatsAndShapes",
+            "name": "Debug BeatsAndShapes (BeatsAndShapes)",
+            "target": "BeatsAndShapes",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug BeatsAndShapes (BeatsAndShapes)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:beats_and_shapes}/BeatsAndShapes",
+            "name": "Release BeatsAndShapes (BeatsAndShapes)",
+            "target": "BeatsAndShapes",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release BeatsAndShapes (BeatsAndShapes)"
+        }
+    ]
+}

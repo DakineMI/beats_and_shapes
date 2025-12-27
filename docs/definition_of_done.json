@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "definition_of_done": {
+    "criteria": {
+      "implementation": {
+        "requirements": [
+          "All functionality implemented",
+          "No TODO comments or placeholders",
+          "No temporary workarounds",
+          "All edge cases handled"
+        ],
+        "tests": {
+          "requirements": [
+            "Unit tests written",
+            "Integration tests written when applicable",
+            "Performance tests where applicable"
+          ],
+          "verification": {
+            "code_review": "Peer reviewed",
+            "test_execution": "Automated checks"
+          },
+          "quality": {
+            "requirements": [
+              "Passes all tests",
+              "Meets performance criteria",
+              "No linter warnings"
+            ],
+            "verification": "Automated checks"
+          }
+        },
+        "code": {
+          "requirements": [
+            "Code is self-documenting",
+            "Comments are clear and necessary",
+            "API documentation complete",
+            "Examples provided where needed"
+          ]
+        },
+        "review": {
+          "code_review": "All review comments addressed",
+          "architecture_validated": "Follows best practices",
+          "testing_coverage": "Comprehensive test coverage"
+          }
+        },
+        "qa_validation": {
+          "requirements": [
+            "QA testing completed",
+            "No open issues",
+            "Edge cases verified",
+            "User scenarios tested"
+          ],
+          "verification": {
+            "code_review": "No outstanding issues",
+            "test_execution": "Automated QA"
+          }
+        }
+      }
+    }
+  }
+}
