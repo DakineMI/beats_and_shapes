@@ -22,12 +22,15 @@ class BeatManager {
     }
 }
 
-// MARK: - Procedural Rhythm Engine
+// MARK: - Advanced Multi-Instrument Synth Engine
 class RhythmEngine {
     private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    private let mixer = AVAudioMixerNode()
+    private let sampler = AVAudioUnitSampler() // For "Acoustic" sounds
+    private let synthNodes: [AVAudioPlayerNode] = (0..<8).map { _ in AVAudioPlayerNode() }
     private var isPlaying = false
     private let bpm: Double
+    private let sampleRate: Double = 44100
     
     init(bpm: Double) {
         self.bpm = bpm
@@ -35,35 +38,87 @@ class RhythmEngine {
     }
     
     private func setupEngine() {
-        let format = engine.mainMixerNode.outputFormat(forBus: 0)
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
+        engine.attach(mixer)
+        engine.connect(mixer, to: engine.mainMixerNode, format: nil)
+        
+        for node in synthNodes {
+            engine.attach(node)
+            engine.connect(node, to: mixer, format: nil)
+        }
+        
+        engine.attach(sampler)
+        engine.connect(sampler, to: mixer, format: nil)
+        
         try? engine.start()
     }
     
-    func playPulse() {
-        let sampleRate: Double = 44100
-        let duration: Double = 0.1
+    private func createBuffer(duration: Double, generator: (Double) -> Float) -> AVAudioPCMBuffer? {
         let frameCount = AVAudioFrameCount(sampleRate * duration)
-        guard let pcmFormat = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else { return }
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: pcmFormat, frameCapacity: frameCount) else { return }
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else { return nil }
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
         buffer.frameLength = frameCount
-        
-        let channels = buffer.floatChannelData![0]
+        let channelData = buffer.floatChannelData![0]
         for i in 0..<Int(frameCount) {
-            let t = Double(i) / sampleRate
-            let freq = 60.0 * exp(-20.0 * t)
-            channels[i] = Float(sin(2.0 * .pi * freq * t) * exp(-10.0 * t))
+            channelData[i] = generator(Double(i) / sampleRate)
+        }
+        return buffer
+    }
+
+    func playPulse(beatIndex: Int) {
+        if !isPlaying { synthNodes.forEach { $0.play() }; isPlaying = true }
+        
+        // 1. KICK (Every beat)
+        if let kick = createBuffer(duration: 0.15, generator: { t in
+            let freq = 60.0 * exp(-15.0 * t)
+            return Float(sin(2.0 * .pi * freq * t) * exp(-8.0 * t))
+        }) { synthNodes[0].scheduleBuffer(kick, at: nil) }
+        
+        // 2. SNARE (Every 2nd and 4th beat)
+        if beatIndex % 2 == 1 {
+            if let snare = createBuffer(duration: 0.1, generator: { t in
+                let noise = Float.random(in: -1...1) * Float(exp(-20.0 * t))
+                let tone = sin(2.0 * .pi * 180.0 * t) * exp(-15.0 * t)
+                return Float(noise + Float(tone)) * 0.5
+            }) { synthNodes[1].scheduleBuffer(snare, at: nil) }
         }
         
-        player.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
-        if !isPlaying { player.play(); isPlaying = true }
+        // 3. HI-HAT (Every half beat simulated)
+        if let hat = createBuffer(duration: 0.05, generator: { t in
+            return Float.random(in: -0.2...0.2) * Float(exp(-50.0 * t))
+        }) { synthNodes[2].scheduleBuffer(hat, at: nil) }
+        
+        // 4. BASS (Patterned)
+        let bassFreqs: [Double] = [55, 65, 41, 49] // A1, C2, E1, G1
+        let bassFreq = bassFreqs[(beatIndex / 4) % bassFreqs.count]
+        if let bass = createBuffer(duration: 0.2, generator: { t in
+            // Sawtooth-ish wave for EDM feel
+            var sample: Double = 0
+            for i in 1...3 { sample += sin(Double(i) * 2.0 * .pi * bassFreq * t) / Double(i) }
+            return Float(sample * exp(-3.0 * t) * 0.3)
+        }) { synthNodes[3].scheduleBuffer(bass, at: nil) }
+        
+        // 5. LEAD NEON SYNTH
+        if beatIndex % 8 >= 4 {
+            let leadFreq = bassFreq * 4.0 // Two octaves up
+            if let lead = createBuffer(duration: 0.1, generator: { t in
+                return Float(sin(2.0 * .pi * leadFreq * t) * sin(2.0 * .pi * 5.0 * t) * exp(-5.0 * t) * 0.2)
+            }) { synthNodes[4].scheduleBuffer(lead, at: nil) }
+        }
+        
+        // 6. FIDDLE/HORN (Procedural approximation using high harmonics)
+        if beatIndex % 16 > 12 {
+            let melodyFreq = bassFreq * 6.0
+            if let inst = createBuffer(duration: 0.3, generator: { t in
+                // Adding vibrato and multiple harmonics for "string/horn" texture
+                let vibrato = 1.0 + 0.02 * sin(2.0 * .pi * 6.0 * t)
+                var s: Double = 0
+                for i in 1...5 { s += sin(Double(i) * 2.0 * .pi * melodyFreq * vibrato * t) / Double(i*i) }
+                return Float(s * exp(-2.0 * t) * 0.15)
+            }) { synthNodes[5].scheduleBuffer(inst, at: nil) }
+        }
     }
     
-    func stop() {
-        player.stop()
-        engine.stop()
-    }
+    func stop() { synthNodes.forEach { $0.stop() }; engine.stop() }
 }
 
 // MARK: - Scrolling Background
@@ -332,7 +387,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     func triggerGameOver() { isGameOver = true; if let s = currentSong { ScoreManager.saveScore(currentScore, for: s.id) }; let l = SKLabelNode(fontNamed: "AvenirNext-Heavy"); l.text = "IT'S OVER"; l.fontSize = 80; l.fontColor = .red; l.position = .zero; l.zPosition = 100; gameCamera.addChild(l); l.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.onExit?() }])) }
     private func handleBeat(_ index: Int) {
-        if isGameOver { return }; currentBeat = index; player.pulse(); rhythmEngine?.playPulse(); progressBar.xScale = min(CGFloat(index) / CGFloat(totalBeats), 1.0)
+        if isGameOver { return }; currentBeat = index; player.pulse(); rhythmEngine?.playPulse(beatIndex: index); progressBar.xScale = min(CGFloat(index) / CGFloat(totalBeats), 1.0)
         let theme = Theme.themes[(currentBeat / 64) % Theme.themes.count]; player.fillColor = theme.playerColor; obstacleManager.currentThemeColor = theme.obstacleColor
         currentScore += 10; scoreNode.text = "SCORE: \(currentScore)"
         let flash = SKShapeNode(rect: frame); flash.position = CGPoint(x: -frame.midX, y: -frame.midY); flash.fillColor = .white; flash.alpha = 0.05; bgPulse.addChild(flash); flash.run(SKAction.sequence([SKAction.fadeOut(withDuration: 0.1), SKAction.removeFromParent()]))
