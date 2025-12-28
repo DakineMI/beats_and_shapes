@@ -19,6 +19,26 @@
             "target": "BeatsAndShapes",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release BeatsAndShapes (BeatsAndShapes)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:beats_and_shapes}/BeatsAndShapes",
+            "name": "Debug MusicGenerator (BeatsAndShapes)",
+            "target": "MusicGenerator",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MusicGenerator (BeatsAndShapes)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:beats_and_shapes}/BeatsAndShapes",
+            "name": "Release MusicGenerator (BeatsAndShapes)",
+            "target": "MusicGenerator",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MusicGenerator (BeatsAndShapes)"
         }
     ]
 }

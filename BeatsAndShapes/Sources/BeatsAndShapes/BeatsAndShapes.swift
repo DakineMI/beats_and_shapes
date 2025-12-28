@@ -27,136 +27,25 @@ class ProgressManager {
 
 // MARK: - Beat Manager
 class BeatManager {
-    let bpm: Double; private var startTime: TimeInterval = 0; private var lastBeatIndex: Int = -1; var onBeat: ((Int) -> Void)?
+    let bpm: Double
+    private var startTime: TimeInterval = 0
+    private var lastBeatIndex: Int = -1
+    var onBeat: ((Int) -> Void)?
+    
     init(bpm: Double) { self.bpm = bpm }
     func start() { startTime = CACurrentMediaTime(); lastBeatIndex = -1 }
     func update() {
         let elapsedTime = CACurrentMediaTime() - startTime
         let currentBeatIndex = Int(elapsedTime / (60.0 / bpm))
-        if currentBeatIndex > lastBeatIndex { lastBeatIndex = currentBeatIndex; onBeat?(currentBeatIndex) }
+        if currentBeatIndex > lastBeatIndex { 
+            lastBeatIndex = currentBeatIndex
+            onBeat?(currentBeatIndex) 
+        }
     }
 }
 
-// MARK: - Advanced Multi-Instrument Synth Engine
-class RhythmEngine {
-    private let engine = AVAudioEngine()
-    private let mixer = AVAudioMixerNode()
-    private let reverb = AVAudioUnitReverb()
-    private let delay = AVAudioUnitDelay()
-    private let synthNodes: [AVAudioPlayerNode] = (0..<8).map { _ in AVAudioPlayerNode() }
-    private let musicPlayer = AVAudioPlayerNode()
-    private var isPlaying = false
-    private let bpm: Double
-    private var prebakedBuffers: [Int: AVAudioPCMBuffer] = [:]
-    private var musicFile: AVAudioFile?
-    
-    struct BeatState {
-        let kick: Bool; let snare: Bool; let hat: Bool; let bassNote: Int?; let leadActive: Bool
-        let hornTrigger: Bool; let fiddleTrigger: Bool
-    }
-    
-    init(bpm: Double, audioFileName: String? = nil) {
-        self.bpm = bpm
-        setupEngine()
-        if let fileName = audioFileName {
-            let exts = ["mp3", "m4a", "wav", "aac"]
-            for ext in exts {
-                if let url = Bundle.main.url(forResource: fileName, withExtension: ext) {
-                    musicFile = try? AVAudioFile(forReading: url)
-                    if musicFile != nil { break }
-                }
-            }
-        }
-        prebakeInstruments()
-    }
-    
-    func getBeatState(index: Int) -> BeatState {
-        srand48(Int(truncatingIfNeeded: index))
-        return BeatState(
-            kick: true,
-            snare: index % 2 == 1,
-            hat: true,
-            bassNote: index % 4 == 0 ? (index / 4) % 4 : nil,
-            leadActive: index % 8 >= 4,
-            hornTrigger: index % 16 == 0,
-            fiddleTrigger: index % 16 > 12
-        )
-    }
-    
-    private func setupEngine() {
-        engine.attach(mixer)
-        engine.attach(reverb)
-        reverb.loadFactoryPreset(.largeHall)
-        reverb.wetDryMix = 30
-        engine.attach(delay)
-        delay.delayTime = 0.375
-        delay.feedback = 20
-        delay.wetDryMix = 15
-        
-        let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
-        engine.connect(mixer, to: delay, format: format)
-        engine.connect(delay, to: reverb, format: format)
-        engine.connect(reverb, to: engine.mainMixerNode, format: format)
-        
-        for node in synthNodes { 
-            engine.attach(node)
-            engine.connect(node, to: mixer, format: format) 
-        }
-        engine.attach(musicPlayer)
-        engine.connect(musicPlayer, to: mixer, format: format)
-        
-        try? engine.start()
-    }
-    
-    private func prebakeInstruments() {
-        let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
-        let sampleRate = 44100.0
-        func bake(id: Int, duration: Double, generator: (Double) -> Float) {
-            let frameCount = AVAudioFrameCount(sampleRate * duration)
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
-            buffer.frameLength = frameCount
-            for ch in 0..<Int(format.channelCount) {
-                let data = buffer.floatChannelData![ch]
-                for i in 0..<Int(frameCount) { data[i] = generator(Double(i) / sampleRate) }
-            }
-            prebakedBuffers[id] = buffer
-        }
-        bake(id: 0, duration: 0.3) { t in Float(sin(2.0 * .pi * (60.0 * exp(-10.0 * t)) * t) * exp(-5.0 * t)) }
-        bake(id: 1, duration: 0.15) { t in Float(Float.random(in: -1...1) * Float(exp(-30.0 * t)) + Float(sin(2.0 * .pi * 200.0 * t) * exp(-20.0 * t))) * 0.5 }
-        bake(id: 2, duration: 0.05) { t in Float.random(in: -0.5...0.5) * Float(exp(-80.0 * t)) }
-        let bassFreqs = [41.2, 49.0, 55.0, 65.4]
-        for (i, freq) in bassFreqs.enumerated() {
-            bake(id: 3 + i, duration: 0.4) { t in 
-                var s: Double = 0; for j in 1...5 { let type = (j % 2 == 0) ? 0.0 : 1.0; s += (sin(Double(j) * 2.0 * .pi * freq * t) * type) / Double(j) }
-                return Float(s * exp(-2.0 * t) * 0.4)
-            }
-        }
-        bake(id: 7, duration: 0.5) { t in
-            var s: Double = 0; let f = 220.0; for j in 1...10 { s += sin(Double(j) * 2.0 * .pi * f * t) / Double(j*j) }
-            return Float(s * exp(-3.0 * t) * 0.5)
-        }
-    }
-
-    func playPulse(beatIndex: Int) {
-        if !isPlaying { 
-            synthNodes.forEach { $0.play() }
-            if let file = musicFile {
-                musicPlayer.scheduleFile(file, at: nil, completionHandler: nil)
-                musicPlayer.play()
-            }
-            isPlaying = true 
-        }
-        let state = getBeatState(index: beatIndex)
-        if musicFile == nil {
-            if state.kick, let b = prebakedBuffers[0] { synthNodes[0].scheduleBuffer(b, at: nil, options: .interrupts) }
-            if state.snare, let b = prebakedBuffers[1] { synthNodes[1].scheduleBuffer(b, at: nil, options: .interrupts) }
-            if state.hat, let b = prebakedBuffers[2] { synthNodes[2].scheduleBuffer(b, at: nil, options: .interrupts) }
-        }
-        if let note = state.bassNote, let b = prebakedBuffers[3 + note] { synthNodes[3].scheduleBuffer(b, at: nil, options: .interrupts) }
-        if state.hornTrigger, let b = prebakedBuffers[7] { synthNodes[4].scheduleBuffer(b, at: nil, options: .interrupts) }
-    }
-    func stop() { synthNodes.forEach { $0.stop() }; musicPlayer.stop(); engine.stop() }
-}
+// MARK: - Audio Engine
+typealias RhythmEngine = AudioEngine
 
 // MARK: - Scrolling Background
 class ScrollingBackground: SKNode {
@@ -381,4 +270,11 @@ struct ContentView: View {
     func startGame(with s: Song) { let g = GameScene(); g.size = CGSize(width: 1024, height: 768); g.scaleMode = .aspectFill; g.currentSong = s; g.onExit = { showMenu() }; currentScene = g }
 }
 @main
-struct BeatsAndShapesApp: App { var body: some Scene { WindowGroup { ContentView() }.windowStyle(.hiddenTitleBar) } }
+struct BeatsAndShapesApp: App { 
+    var body: some Scene { 
+        WindowGroup { 
+            GameView() 
+        } 
+        .windowStyle(.hiddenTitleBar) 
+    } 
+}

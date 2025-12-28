@@ -11,11 +11,18 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "BeatsAndShapes",
+            dependencies: [],
             path: "Sources/BeatsAndShapes"
         ),
         .executableTarget(
             name: "MusicGenerator",
+            dependencies: [],
             path: "Sources/MusicGenerator"
+        ),
+        .testTarget(
+            name: "BeatsAndShapesTests",
+            dependencies: ["BeatsAndShapes"],
+            path: "Tests/BeatsAndShapesTests"
         )
     ]
 )
