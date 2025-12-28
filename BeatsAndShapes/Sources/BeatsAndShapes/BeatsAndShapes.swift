@@ -385,18 +385,37 @@ struct SpriteKitContainer: NSViewRepresentable {
     func updateNSView(_ nsView: SKView, context: Context) { if nsView.scene != scene { nsView.presentScene(scene) } }
 }
 #endif
+
 struct ContentView: View {
     @State private var currentScene: SKScene?
-    var body: some View { ZStack { if let s = currentScene { SpriteKitContainer(scene: s).ignoresSafeArea() } }.background(Color.black).onAppear { showSplash() } }
+    var body: some View {
+        ZStack {
+            if let s = currentScene {
+                SpriteKitContainer(scene: s).ignoresSafeArea()
+            }
+        }
+        .background(Color.black)
+        .onAppear {
+            #if os(macOS)
+            if let window = NSApplication.shared.windows.first {
+                window.toggleFullScreen(nil)
+            }
+            #endif
+            showSplash()
+        }
+    }
     func showSplash() { let s = SplashScreenScene(); s.size = CGSize(width: 1024, height: 768); s.scaleMode = .aspectFill; s.onFinished = { showMenu() }; currentScene = s }
     func showMenu() { let m = MenuScene(); m.size = CGSize(width: 1024, height: 768); m.scaleMode = .aspectFill; m.onSongSelected = { startGame(with: $0) }; currentScene = m }
     func startGame(with s: Song) { let g = GameScene(); g.size = CGSize(width: 1024, height: 768); g.scaleMode = .aspectFill; g.currentSong = s; g.onExit = { showMenu() }; currentScene = g }
 }
 @main
 struct BeatsAndShapesApp: App {
-    var body: some Scene { WindowGroup { ContentView() }
-    #if os(macOS)
-    .windowStyle(.hiddenTitleBar)
-    #endif
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        #if os(macOS)
+        .windowStyle(.hiddenTitleBar)
+        #endif
     }
 }
