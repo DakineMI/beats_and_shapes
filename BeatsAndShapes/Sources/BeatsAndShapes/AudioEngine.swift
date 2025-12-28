@@ -13,6 +13,13 @@ class AudioEngine {
     private var prebakedBuffers: [Int: AVAudioPCMBuffer] = [:]
     private var musicFile: AVAudioFile?
     
+    deinit {
+        // Properly cleanup all audio buffers to prevent memory leaks
+        prebakedBuffers.values.forEach { $0.pointee = nil }
+        prebakedBuffers.removeAll()
+        print("🧹 AudioEngine: Cleaned up all buffers")
+    }
+    
     struct BeatState {
         let kick: Bool
         let snare: Bool
