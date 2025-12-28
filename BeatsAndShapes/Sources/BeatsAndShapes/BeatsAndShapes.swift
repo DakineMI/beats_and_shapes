@@ -274,11 +274,17 @@ class MenuScene: SKScene {
     var onSongSelected: ((Song) -> Void)?
     override func didMove(to view: SKView) {
         self.backgroundColor = .black; let title = SKLabelNode(fontNamed: "AvenirNext-Heavy")
-        title.text = "BEATS & SHAPES"; title.fontSize = 60; title.position = CGPoint(x: frame.midX, y: frame.height * 0.75); title.fontColor = .cyan; addChild(title)
+        title.text = "BEATS & SHAPES"; title.fontSize = 50; title.position = CGPoint(x: frame.midX, y: frame.height * 0.85); title.fontColor = .cyan; addChild(title)
+        
+        let container = SKNode(); addChild(container)
         for (i, song) in GameData.songs.enumerated() {
-            let button = SKShapeNode(rectOf: CGSize(width: 450, height: 70), cornerRadius: 10); button.position = CGPoint(x: frame.midX, y: frame.height * 0.5 - CGFloat(i * 90)); button.fillColor = SKColor.white.withAlphaComponent(0.1); button.strokeColor = .cyan; button.name = "song_\(i)"; addChild(button)
+            let col = i / 5; let row = i % 5
+            let button = SKShapeNode(rectOf: CGSize(width: 440, height: 70), cornerRadius: 10)
+            button.position = CGPoint(x: frame.width * (col == 0 ? 0.28 : 0.72), y: frame.height * 0.65 - CGFloat(row * 100))
+            button.fillColor = SKColor.white.withAlphaComponent(0.1); button.strokeColor = .cyan; button.name = "song_\(i)"; container.addChild(button)
             let l = SKLabelNode(fontNamed: "AvenirNext-Bold"); let high = ScoreManager.getHighScore(for: song.id)
-            l.text = "\(song.name) (\(song.difficultyLabel)) - HI: \(high)"; l.fontSize = 20; l.position = CGPoint(x: 0, y: -8); l.verticalAlignmentMode = .center; button.addChild(l)
+            l.text = "\(song.name) - HI: \(high)"; l.fontSize = 18; l.position = CGPoint(x: 0, y: 5); l.verticalAlignmentMode = .center; button.addChild(l)
+            let sub = SKLabelNode(fontNamed: "AvenirNext-Medium"); sub.text = song.difficultyLabel; sub.fontSize = 12; sub.fontColor = .gray; sub.position = CGPoint(x: 0, y: -20); button.addChild(sub)
         }
     }
     #if os(iOS)
