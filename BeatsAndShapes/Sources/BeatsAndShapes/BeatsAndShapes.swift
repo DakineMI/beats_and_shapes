@@ -188,16 +188,25 @@ class ObstacleManager {
 
 // MARK: - Game Data
 struct Song {
-    let name: String; let bpm: Double; let totalBeats: Int; let difficultyLabel: String
+    let id: String; let name: String; let bpm: Double; let totalBeats: Int; let difficultyLabel: String
 }
 class GameData {
     static let songs = [
-        Song(name: "THE BEGINNING", bpm: 124, totalBeats: 256, difficultyLabel: "EASY"),
-        Song(name: "NEON PULSE", bpm: 140, totalBeats: 512, difficultyLabel: "NORMAL"),
-        Song(name: "THE STAKE", bpm: 160, totalBeats: 1024, difficultyLabel: "HARD"),
-        Song(name: "GLITCH CORE", bpm: 175, totalBeats: 512, difficultyLabel: "EXPERT"),
-        Song(name: "VOID WALKER", bpm: 110, totalBeats: 2048, difficultyLabel: "MARATHON")
+        Song(id: "start", name: "THE BEGINNING", bpm: 124, totalBeats: 256, difficultyLabel: "EASY"),
+        Song(id: "pulse", name: "NEON PULSE", bpm: 140, totalBeats: 512, difficultyLabel: "NORMAL"),
+        Song(id: "stake", name: "THE STAKE", bpm: 160, totalBeats: 1024, difficultyLabel: "HARD"),
+        Song(id: "glitch", name: "GLITCH CORE", bpm: 175, totalBeats: 512, difficultyLabel: "EXPERT"),
+        Song(id: "void", name: "VOID WALKER", bpm: 110, totalBeats: 2048, difficultyLabel: "MARATHON")
     ]
+}
+
+// MARK: - Score Manager
+class ScoreManager {
+    static func getHighScore(for songId: String) -> Int { UserDefaults.standard.integer(forKey: "high_score_\(songId)") }
+    static func saveScore(_ score: Int, for songId: String) {
+        let current = getHighScore(for: songId)
+        if score > current { UserDefaults.standard.set(score, forKey: "high_score_\(songId)") }
+    }
 }
 
 // MARK: - Theme
@@ -258,8 +267,9 @@ class MenuScene: SKScene {
         self.backgroundColor = .black; let title = SKLabelNode(fontNamed: "AvenirNext-Heavy")
         title.text = "BEATS & SHAPES"; title.fontSize = 60; title.position = CGPoint(x: frame.midX, y: frame.height * 0.75); title.fontColor = .cyan; addChild(title)
         for (i, song) in GameData.songs.enumerated() {
-            let button = SKShapeNode(rectOf: CGSize(width: 400, height: 60), cornerRadius: 10); button.position = CGPoint(x: frame.midX, y: frame.height * 0.5 - CGFloat(i * 80)); button.fillColor = SKColor.white.withAlphaComponent(0.1); button.strokeColor = .cyan; button.name = "song_\(i)"; addChild(button)
-            let l = SKLabelNode(fontNamed: "AvenirNext-Bold"); l.text = "\(song.name) (\(song.difficultyLabel))"; l.fontSize = 24; l.position = CGPoint(x: 0, y: -8); l.verticalAlignmentMode = .center; button.addChild(l)
+            let button = SKShapeNode(rectOf: CGSize(width: 450, height: 70), cornerRadius: 10); button.position = CGPoint(x: frame.midX, y: frame.height * 0.5 - CGFloat(i * 90)); button.fillColor = SKColor.white.withAlphaComponent(0.1); button.strokeColor = .cyan; button.name = "song_\(i)"; addChild(button)
+            let l = SKLabelNode(fontNamed: "AvenirNext-Bold"); let high = ScoreManager.getHighScore(for: song.id)
+            l.text = "\(song.name) (\(song.difficultyLabel)) - HI: \(high)"; l.fontSize = 20; l.position = CGPoint(x: 0, y: -8); l.verticalAlignmentMode = .center; button.addChild(l)
         }
     }
     #if os(iOS)
@@ -277,8 +287,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var currentSong: Song?; var onExit: (() -> Void)?
     private var activeKeys = Set<String>(); private var bgPulse = SKNode()
     private var progressBar = SKShapeNode(); private var healthNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    private var scoreNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
     private var totalBeats = 512; private var currentBeat = 0; private var skillModifier: CGFloat = 1.0; private var lastScaleDownTime: TimeInterval = 0; private var flawlessBeats = 0; private var isGameOver = false
-    private let gameCamera = SKCameraNode(); private var lastUpdateTime: TimeInterval = 0
+    private let gameCamera = SKCameraNode(); private var lastUpdateTime: TimeInterval = 0; private var currentScore: Int = 0
     #if os(iOS)
     private var moveTouch: UITouch?; private var joystickCenter: CGPoint?; private var moveVector = CGVector.zero; private let stickBase = SKShapeNode(circleOfRadius: 60); private let stickKnob = SKShapeNode(circleOfRadius: 30)
     #endif
@@ -296,6 +307,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private func setupUI() {
         progressBar = SKShapeNode(rectOf: CGSize(width: frame.width, height: 6)); progressBar.fillColor = .cyan; progressBar.position = CGPoint(x: 0, y: frame.height/2 - 3); progressBar.xScale = 0; gameCamera.addChild(progressBar)
         healthNode.fontSize = 20; healthNode.fontColor = .white; healthNode.position = CGPoint(x: -frame.width/2 + 80, y: frame.height/2 - 50); healthNode.text = "HEALTH: 3"; gameCamera.addChild(healthNode)
+        scoreNode.fontSize = 20; scoreNode.fontColor = .white; scoreNode.position = CGPoint(x: frame.width/2 - 100, y: frame.height/2 - 50); scoreNode.text = "SCORE: 0"; gameCamera.addChild(scoreNode)
     }
     func updateHealthUI() { healthNode.text = "HEALTH: \(player.health)" }
     func shakeCamera(intensity: CGFloat = 12) { 
@@ -303,10 +315,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let now = CACurrentMediaTime(); if now - lastScaleDownTime > 4.8 { skillModifier = max(skillModifier - 0.02, 0.4); lastScaleDownTime = now }
         flawlessBeats = 0
     }
-    func triggerGameOver() { isGameOver = true; let l = SKLabelNode(fontNamed: "AvenirNext-Heavy"); l.text = "IT'S OVER"; l.fontSize = 80; l.fontColor = .red; l.position = .zero; l.zPosition = 100; gameCamera.addChild(l); l.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.onExit?() }])) }
+    func triggerGameOver() { isGameOver = true; if let s = currentSong { ScoreManager.saveScore(currentScore, for: s.id) }; let l = SKLabelNode(fontNamed: "AvenirNext-Heavy"); l.text = "IT'S OVER"; l.fontSize = 80; l.fontColor = .red; l.position = .zero; l.zPosition = 100; gameCamera.addChild(l); l.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.onExit?() }])) }
     private func handleBeat(_ index: Int) {
         if isGameOver { return }; currentBeat = index; player.pulse(); rhythmEngine?.playPulse(); progressBar.xScale = min(CGFloat(index) / CGFloat(totalBeats), 1.0)
         let theme = Theme.themes[(currentBeat / 64) % Theme.themes.count]; player.fillColor = theme.playerColor; obstacleManager.currentThemeColor = theme.obstacleColor
+        currentScore += 10; scoreNode.text = "SCORE: \(currentScore)"
         let flash = SKShapeNode(rect: frame); flash.position = CGPoint(x: -frame.midX, y: -frame.midY); flash.fillColor = .white; flash.alpha = 0.05; bgPulse.addChild(flash); flash.run(SKAction.sequence([SKAction.fadeOut(withDuration: 0.1), SKAction.removeFromParent()]))
         flawlessBeats += 1; let comb = skillModifier
         if index > totalBeats - 64 && boss == nil { boss = BossNode(); boss?.position = CGPoint(x: frame.width - 200, y: frame.midY); addChild(boss!) }
@@ -322,7 +335,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         updateKbdMove(); #elseif os(iOS)
         updateJoystick(); #endif
         let ps = CGFloat(15); player.position.x = max(ps, min(frame.width - ps, player.position.x)); player.position.y = max(ps, min(frame.height - ps, player.position.y))
-        if currentBeat >= totalBeats && !isGameOver { isGameOver = true; let l = SKLabelNode(fontNamed: "AvenirNext-Heavy"); l.text = "WIN"; l.fontSize = 80; l.fontColor = .cyan; l.position = .zero; l.zPosition = 100; gameCamera.addChild(l); l.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.onExit?() }])) }
+        if currentBeat >= totalBeats && !isGameOver { isGameOver = true; if let s = currentSong { ScoreManager.saveScore(currentScore, for: s.id) }; let l = SKLabelNode(fontNamed: "AvenirNext-Heavy"); l.text = "WIN"; l.fontSize = 80; l.fontColor = .cyan; l.position = .zero; l.zPosition = 100; gameCamera.addChild(l); l.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.onExit?() }])) }
     }
     #if os(iOS)
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) { for t in touches { let loc = t.location(in: self); if loc.x < frame.width / 2 { if moveTouch == nil { moveTouch = t; joystickCenter = loc; stickBase.position = loc; stickBase.isHidden = false; stickKnob.position = loc; stickKnob.isHidden = false } } else { player.dash(direction: moveVector == .zero ? CGVector(dx: 1, dy: 0) : moveVector) } } }
