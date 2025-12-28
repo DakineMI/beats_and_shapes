@@ -3,74 +3,59 @@ client:
   file-system: device-agnostic
 tools: {}
 targets:
-  "BeatsAndShapes-arm64-apple-macosx15.0-debug.exe": ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe>"]
-  "BeatsAndShapes-arm64-apple-macosx15.0-debug.module": ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.module>"]
+  "BeatsAndShapes-arm64-apple-macosx15.0-release.exe": ["<BeatsAndShapes-arm64-apple-macosx15.0-release.exe>"]
+  "BeatsAndShapes-arm64-apple-macosx15.0-release.module": ["<BeatsAndShapes-arm64-apple-macosx15.0-release.module>"]
   "PackageStructure": ["<PackageStructure>"]
-  "main": ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe>","<BeatsAndShapes-arm64-apple-macosx15.0-debug.module>"]
-  "test": ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe>","<BeatsAndShapes-arm64-apple-macosx15.0-debug.module>"]
+  "main": ["<BeatsAndShapes-arm64-apple-macosx15.0-release.exe>","<BeatsAndShapes-arm64-apple-macosx15.0-release.module>"]
+  "test": ["<BeatsAndShapes-arm64-apple-macosx15.0-release.exe>","<BeatsAndShapes-arm64-apple-macosx15.0-release.module>"]
 default: "main"
 nodes:
   "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/Sources/BeatsAndShapes/":
     is-directory-structure: true
     content-exclusion-patterns: [".git",".build"]
-  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes":
-    is-mutated: true
 commands:
-  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes-entitlement.plist":
-    tool: write-auxiliary-file
-    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes-entitlement.plist"]
-    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes-entitlement.plist"
-
-  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/sources":
+  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/sources":
     tool: write-auxiliary-file
     inputs: ["<sources-file-list>","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/Sources/BeatsAndShapes/BeatsAndShapes.swift"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/sources"]
-    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/sources"
+    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/sources"]
+    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/sources"
 
-  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.product/Objects.LinkFileList":
+  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.product/Objects.LinkFileList":
     tool: write-auxiliary-file
-    inputs: ["<link-file-list>","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/BeatsAndShapes.swift.o"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.product/Objects.LinkFileList"]
-    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.product/Objects.LinkFileList"
+    inputs: ["<link-file-list>","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/BeatsAndShapes.swift.o"]
+    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.product/Objects.LinkFileList"
 
-  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/swift-version-F267FA2F636F94C.txt":
+  "/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/swift-version-F267FA2F636F94C.txt":
     tool: write-auxiliary-file
     inputs: ["<swift-get-version>","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/bin/swiftc"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/swift-version-F267FA2F636F94C.txt"]
+    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/swift-version-F267FA2F636F94C.txt"]
     always-out-of-date: "true"
-    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/swift-version-F267FA2F636F94C.txt"
+    description: "Write auxiliary file /Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/swift-version-F267FA2F636F94C.txt"
 
-  "<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe>":
+  "<BeatsAndShapes-arm64-apple-macosx15.0-release.exe>":
     tool: phony
-    inputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe-CodeSigning>"]
-    outputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe>"]
+    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes"]
+    outputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-release.exe>"]
 
-  "<BeatsAndShapes-arm64-apple-macosx15.0-debug.module>":
+  "<BeatsAndShapes-arm64-apple-macosx15.0-release.module>":
     tool: phony
-    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/Modules/BeatsAndShapes.swiftmodule"]
-    outputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.module>"]
+    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/Modules/BeatsAndShapes.swiftmodule"]
+    outputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-release.module>"]
 
-  "C.BeatsAndShapes-arm64-apple-macosx15.0-debug.exe":
+  "C.BeatsAndShapes-arm64-apple-macosx15.0-release.exe":
     tool: shell
-    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.product/Objects.LinkFileList"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes"]
-    description: "Linking ./.build/arm64-apple-macosx/debug/BeatsAndShapes"
-    args: ["/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/bin/swiftc","-L","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug","-o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes","-module-name","BeatsAndShapes","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_BeatsAndShapes_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-Xlinker","-add_ast_path","-Xlinker","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/Modules/BeatsAndShapes.swiftmodule","-I","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-L","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-plugin-path","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.product/Objects.LinkFileList"]
+    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes"]
+    description: "Linking ./.build/arm64-apple-macosx/release/BeatsAndShapes"
+    args: ["/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/bin/swiftc","-L","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release","-o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes","-module-name","BeatsAndShapes","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-dead_strip","-Xlinker","-alias","-Xlinker","_BeatsAndShapes_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-I","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-L","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-plugin-path","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
 
-  "C.BeatsAndShapes-arm64-apple-macosx15.0-debug.exe-entitlements":
+  "C.BeatsAndShapes-arm64-apple-macosx15.0-release.module":
     tool: shell
-    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes-entitlement.plist"]
-    outputs: ["<BeatsAndShapes-arm64-apple-macosx15.0-debug.exe-CodeSigning>"]
-    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/BeatsAndShapes"
-    args: ["codesign","--force","--sign","-","--entitlements","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes-entitlement.plist","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes"]
-
-  "C.BeatsAndShapes-arm64-apple-macosx15.0-debug.module":
-    tool: shell
-    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/Sources/BeatsAndShapes/BeatsAndShapes.swift","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/swift-version-F267FA2F636F94C.txt","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/sources"]
-    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/Modules/BeatsAndShapes.swiftmodule"]
+    inputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/Sources/BeatsAndShapes/BeatsAndShapes.swift","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/swift-version-F267FA2F636F94C.txt","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/sources"]
+    outputs: ["/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/BeatsAndShapes.swift.o","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/Modules/BeatsAndShapes.swiftmodule"]
     description: "Compiling Swift Module 'BeatsAndShapes' (1 sources)"
-    args: ["/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/bin/swiftc","-module-name","BeatsAndShapes","-emit-dependencies","-emit-module","-emit-module-path","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/Modules/BeatsAndShapes.swiftmodule","-output-file-map","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/output-file-map.json","-incremental","-c","@/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/BeatsAndShapes.build/sources","-I","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j14","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","BeatsAndShapes_main","-parse-as-library","-swift-version","5","-I","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-L","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-plugin-path","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","beatsandshapes"]
+    args: ["/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/bin/swiftc","-module-name","BeatsAndShapes","-emit-dependencies","-emit-module","-emit-module-path","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/Modules/BeatsAndShapes.swiftmodule","-output-file-map","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/output-file-map.json","-whole-module-optimization","-num-threads","14","-c","@/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/BeatsAndShapes.build/sources","-I","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/Modules","-target","arm64-apple-macosx14.0","-whole-module-optimization","-num-threads","14","-serialize-diagnostics","-O","-j14","-DSWIFT_PACKAGE","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/jonathanhughes/source/software-company/madbadbrax/beats_and_shapes/BeatsAndShapes/.build/arm64-apple-macosx/release/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","BeatsAndShapes_main","-parse-as-library","-swift-version","5","-I","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-L","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/macosx/testing","-plugin-path","/opt/homebrew/Cellar/swift/6.2.3/Swift-6.2.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","beatsandshapes"]
 
   "PackageStructure":
     tool: package-structure-tool

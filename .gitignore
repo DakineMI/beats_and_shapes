@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+*.app/
+DerivedData/
+Packages
+.swiftpm/
+.conan/
+*.swp
+*.orig
+.idea/
+.vscode/
+build/
+bin/
+obj/
