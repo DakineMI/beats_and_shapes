@@ -110,18 +110,22 @@ class BossNode: SKShapeNode {
     required init?(coder aDecoder: NSCoder) { fatalError() }
     
     func attack(scene: SKScene, color: SKColor, phase: Int) {
-        if phase % 2 == 0 {
+        if phase % 3 == 0 {
             for i in 0..<12 {
                 let angle = CGFloat(i) * (.pi / 6)
                 let b = SKShapeNode(circleOfRadius: 15); b.fillColor = color; b.position = self.position
                 b.physicsBody = SKPhysicsBody(circleOfRadius: 15); b.physicsBody?.categoryBitMask = 0x1 << 1; b.physicsBody?.collisionBitMask = 0; scene.addChild(b)
                 b.run(SKAction.sequence([SKAction.moveBy(x: cos(angle)*1200, y: sin(angle)*1200, duration: 1.5), SKAction.removeFromParent()]))
             }
-        } else {
+        } else if phase % 3 == 1 {
             let b = SKShapeNode(rectOf: CGSize(width: 40, height: 2000))
             b.fillColor = color.withAlphaComponent(0.3); b.position = CGPoint(x: self.position.x - 500, y: self.position.y)
             scene.addChild(b)
             b.run(SKAction.sequence([SKAction.wait(forDuration: 0.4), SKAction.run { b.fillColor = color; b.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 40, height: 2000)); b.physicsBody?.categoryBitMask = 0x1 << 1 }, SKAction.wait(forDuration: 0.2), SKAction.removeFromParent()]))
+        } else {
+            let wave = SKShapeNode(circleOfRadius: 10); wave.position = self.position; wave.strokeColor = color; wave.lineWidth = 5; scene.addChild(wave)
+            wave.run(SKAction.sequence([SKAction.group([SKAction.scale(to: 50.0, duration: 0.8), SKAction.fadeOut(withDuration: 0.8)]), SKAction.removeFromParent()]))
+            let dNode = SKNode(); dNode.physicsBody = SKPhysicsBody(circleOfRadius: 500); dNode.physicsBody?.categoryBitMask = 0x1 << 1; wave.addChild(dNode)
         }
     }
 }
@@ -196,7 +200,12 @@ class GameData {
         Song(id: "pulse", name: "NEON PULSE", bpm: 140, totalBeats: 512, difficultyLabel: "NORMAL"),
         Song(id: "stake", name: "THE STAKE", bpm: 160, totalBeats: 1024, difficultyLabel: "HARD"),
         Song(id: "glitch", name: "GLITCH CORE", bpm: 175, totalBeats: 512, difficultyLabel: "EXPERT"),
-        Song(id: "void", name: "VOID WALKER", bpm: 110, totalBeats: 2048, difficultyLabel: "MARATHON")
+        Song(id: "void", name: "VOID WALKER", bpm: 110, totalBeats: 2048, difficultyLabel: "MARATHON"),
+        Song(id: "cyber", name: "CYBER DREAMS", bpm: 128, totalBeats: 512, difficultyLabel: "NORMAL"),
+        Song(id: "overdrive", name: "OVERDRIVE", bpm: 185, totalBeats: 400, difficultyLabel: "EXPERT"),
+        Song(id: "chill", name: "LOFI BEAT", bpm: 90, totalBeats: 1024, difficultyLabel: "EASY"),
+        Song(id: "boss1", name: "BOSS RUSH 1", bpm: 150, totalBeats: 512, difficultyLabel: "HARD"),
+        Song(id: "final", name: "FINAL SHAPE", bpm: 200, totalBeats: 1024, difficultyLabel: "EXPERT")
     ]
 }
 
