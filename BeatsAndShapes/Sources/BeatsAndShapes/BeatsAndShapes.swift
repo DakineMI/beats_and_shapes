@@ -98,7 +98,10 @@ class RhythmEngine {
         engine.connect(delay, to: reverb, format: format)
         engine.connect(reverb, to: engine.mainMixerNode, format: format)
         
-        for node in synthNodes { engine.attach(node); engine.connect(node, to: mixer, format: format) }
+        for node in synthNodes { 
+            engine.attach(node)
+            engine.connect(node, to: mixer, format: format) 
+        }
         engine.attach(musicPlayer)
         engine.connect(musicPlayer, to: mixer, format: format)
         
@@ -246,7 +249,11 @@ class SplashScreenScene: SKScene {
             p.play()
         } else { runFallback() }
     }
-    private func finish() { videoPlayer?.pause(); videoLayer?.removeFromSuperlayer(); onFinished?() }
+    private func finish() { 
+        videoPlayer?.pause()
+        videoLayer?.removeFromSuperlayer()
+        onFinished?() 
+    }
     private func runFallback() {
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy"); label.text = "BadMadBrax"; label.fontSize = 80; label.position = CGPoint(x: frame.midX, y: frame.midY); addChild(label)
         label.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.finish() }]))
