@@ -10,6 +10,18 @@ import UIKit
 import AppKit
 #endif
 
+// MARK: - Beat Manager
+class BeatManager {
+    let bpm: Double; private var startTime: TimeInterval = 0; private var lastBeatIndex: Int = -1; var onBeat: ((Int) -> Void)?
+    init(bpm: Double) { self.bpm = bpm }
+    func start() { startTime = CACurrentMediaTime() }
+    func update() {
+        let elapsedTime = CACurrentMediaTime() - startTime
+        let currentBeatIndex = Int(elapsedTime / (60.0 / bpm))
+        if currentBeatIndex > lastBeatIndex { lastBeatIndex = currentBeatIndex; onBeat?(currentBeatIndex) }
+    }
+}
+
 // MARK: - Procedural Rhythm Engine
 class RhythmEngine {
     private let engine = AVAudioEngine()
@@ -58,10 +70,10 @@ class RhythmEngine {
 class ScrollingBackground: SKNode {
     private var gridNodes: [SKShapeNode] = []
     private let moveSpeed: CGFloat = 300
+    private let spacing: CGFloat = 100
     
     init(size: CGSize) {
         super.init()
-        let spacing: CGFloat = 100
         for i in 0...Int(size.width / spacing) + 2 {
             let line = SKShapeNode(rectOf: CGSize(width: 2, height: size.height))
             line.fillColor = .white; line.strokeColor = .clear; line.alpha = 0.1
