@@ -25,6 +25,9 @@ if [ -f "../splash.mp4" ]; then
     cp "../splash.mp4" "../${APP_DIR}/Contents/Resources/"
 fi
 
+# Copy any MP3 music files
+cp ../*.mp3 "../${APP_DIR}/Contents/Resources/" 2>/dev/null || true
+
 echo "Creating Info.plist..."
 cat > "../${APP_DIR}/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

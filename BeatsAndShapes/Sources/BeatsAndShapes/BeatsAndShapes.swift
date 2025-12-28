@@ -41,43 +41,67 @@ class BeatManager {
 class RhythmEngine {
     private let engine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
+    private let reverb = AVAudioUnitReverb()
+    private let delay = AVAudioUnitDelay()
     private let synthNodes: [AVAudioPlayerNode] = (0..<8).map { _ in AVAudioPlayerNode() }
+    private let musicPlayer = AVAudioPlayerNode()
     private var isPlaying = false
     private let bpm: Double
     private var prebakedBuffers: [Int: AVAudioPCMBuffer] = [:]
+    private var musicFile: AVAudioFile?
     
-    // The "Music Sheet" state for the current beat
     struct BeatState {
-        let kick: Bool
-        let snare: Bool
-        let hat: Bool
-        let bassNote: Int? // 0-3 mapped to freqs
-        let leadActive: Bool
+        let kick: Bool; let snare: Bool; let hat: Bool; let bassNote: Int?; let leadActive: Bool
+        let hornTrigger: Bool; let fiddleTrigger: Bool
     }
     
-    init(bpm: Double) {
+    init(bpm: Double, audioFileName: String? = nil) {
         self.bpm = bpm
         setupEngine()
+        if let fileName = audioFileName {
+            let exts = ["mp3", "m4a", "wav", "aac"]
+            for ext in exts {
+                if let url = Bundle.main.url(forResource: fileName, withExtension: ext) {
+                    musicFile = try? AVAudioFile(forReading: url)
+                    if musicFile != nil { break }
+                }
+            }
+        }
         prebakeInstruments()
     }
     
     func getBeatState(index: Int) -> BeatState {
-        // Seeded logic to make the "music sheet" consistent per track
-        srand48(index) 
+        srand48(Int(truncatingIfNeeded: index))
         return BeatState(
-            kick: true, // Always on beat
+            kick: true,
             snare: index % 2 == 1,
             hat: true,
             bassNote: index % 4 == 0 ? (index / 4) % 4 : nil,
-            leadActive: index % 8 >= 4
+            leadActive: index % 8 >= 4,
+            hornTrigger: index % 16 == 0,
+            fiddleTrigger: index % 16 > 12
         )
     }
     
     private func setupEngine() {
         engine.attach(mixer)
+        engine.attach(reverb)
+        reverb.loadFactoryPreset(.largeHall)
+        reverb.wetDryMix = 30
+        engine.attach(delay)
+        delay.delayTime = 0.375
+        delay.feedback = 20
+        delay.wetDryMix = 15
+        
         let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
-        engine.connect(mixer, to: engine.mainMixerNode, format: format)
+        engine.connect(mixer, to: delay, format: format)
+        engine.connect(delay, to: reverb, format: format)
+        engine.connect(reverb, to: engine.mainMixerNode, format: format)
+        
         for node in synthNodes { engine.attach(node); engine.connect(node, to: mixer, format: format) }
+        engine.attach(musicPlayer)
+        engine.connect(musicPlayer, to: mixer, format: format)
+        
         try? engine.start()
     }
     
@@ -94,32 +118,41 @@ class RhythmEngine {
             }
             prebakedBuffers[id] = buffer
         }
-        // 0: Kick, 1: Snare, 2: Hat, 3-6: Bass Notes, 7: Lead
-        bake(id: 0, duration: 0.15) { t in Float(sin(2.0 * .pi * (60.0 * exp(-15.0 * t)) * t) * exp(-8.0 * t)) }
-        bake(id: 1, duration: 0.1) { t in Float(Float.random(in: -1...1) * Float(exp(-20.0 * t)) + Float(sin(2.0 * .pi * 180.0 * t) * exp(-15.0 * t))) * 0.4 }
-        bake(id: 2, duration: 0.05) { t in Float.random(in: -0.2...0.2) * Float(exp(-50.0 * t)) }
-        
-        let bassFreqs = [41.2, 49.0, 55.0, 65.4] // E1, G1, A1, C2
+        bake(id: 0, duration: 0.3) { t in Float(sin(2.0 * .pi * (60.0 * exp(-10.0 * t)) * t) * exp(-5.0 * t)) }
+        bake(id: 1, duration: 0.15) { t in Float(Float.random(in: -1...1) * Float(exp(-30.0 * t)) + Float(sin(2.0 * .pi * 200.0 * t) * exp(-20.0 * t))) * 0.5 }
+        bake(id: 2, duration: 0.05) { t in Float.random(in: -0.5...0.5) * Float(exp(-80.0 * t)) }
+        let bassFreqs = [41.2, 49.0, 55.0, 65.4]
         for (i, freq) in bassFreqs.enumerated() {
-            bake(id: 3 + i, duration: 0.2) { t in 
-                var s: Double = 0; for j in 1...3 { s += sin(Double(j) * 2.0 * .pi * freq * t) / Double(j) }
-                return Float(s * exp(-5.0 * t) * 0.3)
+            bake(id: 3 + i, duration: 0.4) { t in 
+                var s: Double = 0; for j in 1...5 { let type = (j % 2 == 0) ? 0.0 : 1.0; s += (sin(Double(j) * 2.0 * .pi * freq * t) * type) / Double(j) }
+                return Float(s * exp(-2.0 * t) * 0.4)
             }
         }
-        bake(id: 7, duration: 0.15) { t in Float(sin(2.0 * .pi * 440.0 * t) * sin(2.0 * .pi * 5.0 * t) * exp(-10.0 * t) * 0.2) }
+        bake(id: 7, duration: 0.5) { t in
+            var s: Double = 0; let f = 220.0; for j in 1...10 { s += sin(Double(j) * 2.0 * .pi * f * t) / Double(j*j) }
+            return Float(s * exp(-3.0 * t) * 0.5)
+        }
     }
 
     func playPulse(beatIndex: Int) {
-        if !isPlaying { synthNodes.forEach { $0.play() }; isPlaying = true }
+        if !isPlaying { 
+            synthNodes.forEach { $0.play() }
+            if let file = musicFile {
+                musicPlayer.scheduleFile(file, at: nil, completionHandler: nil)
+                musicPlayer.play()
+            }
+            isPlaying = true 
+        }
         let state = getBeatState(index: beatIndex)
-        
-        if state.kick, let b = prebakedBuffers[0] { synthNodes[0].scheduleBuffer(b, at: nil, options: .interrupts) }
-        if state.snare, let b = prebakedBuffers[1] { synthNodes[1].scheduleBuffer(b, at: nil, options: .interrupts) }
-        if state.hat, let b = prebakedBuffers[2] { synthNodes[2].scheduleBuffer(b, at: nil, options: .interrupts) }
+        if musicFile == nil {
+            if state.kick, let b = prebakedBuffers[0] { synthNodes[0].scheduleBuffer(b, at: nil, options: .interrupts) }
+            if state.snare, let b = prebakedBuffers[1] { synthNodes[1].scheduleBuffer(b, at: nil, options: .interrupts) }
+            if state.hat, let b = prebakedBuffers[2] { synthNodes[2].scheduleBuffer(b, at: nil, options: .interrupts) }
+        }
         if let note = state.bassNote, let b = prebakedBuffers[3 + note] { synthNodes[3].scheduleBuffer(b, at: nil, options: .interrupts) }
-        if state.leadActive, let b = prebakedBuffers[7] { synthNodes[7].scheduleBuffer(b, at: nil, options: .interrupts) }
+        if state.hornTrigger, let b = prebakedBuffers[7] { synthNodes[4].scheduleBuffer(b, at: nil, options: .interrupts) }
     }
-    func stop() { synthNodes.forEach { $0.stop() }; engine.stop() }
+    func stop() { synthNodes.forEach { $0.stop() }; musicPlayer.stop(); engine.stop() }
 }
 
 // MARK: - Scrolling Background
@@ -190,11 +223,11 @@ class PlayerNode: SKShapeNode {
 }
 
 // MARK: - Game Data
-struct Song { let id: String; let name: String; let bpm: Double; let totalBeats: Int; let difficulty: String; let volume: Int }
+struct Song { let id: String; let name: String; let bpm: Double; let totalBeats: Int; let difficulty: String; let volume: Int; let audioFile: String? }
 class GameData {
     static let songs: [Song] = (0..<100).map { i in
         let vol = (i / 20) + 1; let bpm = 120.0 + Double(i % 20) * 4.0
-        return Song(id: "s\(i)", name: "TRACK \(i+1)", bpm: bpm, totalBeats: 256 + (i*16), difficulty: i < 20 ? "EASY" : i < 60 ? "NORMAL" : "EXPERT", volume: vol)
+        return Song(id: "s\(i)", name: "TRACK \(i+1)", bpm: bpm, totalBeats: 256 + (i*16), difficulty: i < 20 ? "EASY" : i < 60 ? "NORMAL" : "EXPERT", volume: vol, audioFile: nil)
     }
 }
 
@@ -205,13 +238,15 @@ class SplashScreenScene: SKScene {
     override func didMove(to view: SKView) {
         self.backgroundColor = .black
         if let url = Bundle.main.url(forResource: "splash", withExtension: "mp4") {
-            videoPlayer = AVPlayer(url: url); videoLayer = AVPlayerLayer(player: videoPlayer)
-            videoLayer?.frame = view.bounds; videoLayer?.videoGravity = .resizeAspectFill
-            view.layer?.addSublayer(videoLayer!); NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: videoPlayer?.currentItem, queue: .main) { [weak self] _ in self?.finish() }
-            videoPlayer?.play()
+            let p = AVPlayer(url: url); let l = AVPlayerLayer(player: p)
+            self.videoPlayer = p; self.videoLayer = l
+            l.frame = view.bounds; l.videoGravity = .resizeAspectFill
+            if let bl = view.layer { bl.addSublayer(l) }
+            NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: p.currentItem, queue: .main) { [weak self] _ in self?.finish() }
+            p.play()
         } else { runFallback() }
     }
-    private func finish() { videoLayer?.removeFromSuperlayer(); onFinished?() }
+    private func finish() { videoPlayer?.pause(); videoLayer?.removeFromSuperlayer(); onFinished?() }
     private func runFallback() {
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy"); label.text = "BadMadBrax"; label.fontSize = 80; label.position = CGPoint(x: frame.midX, y: frame.midY); addChild(label)
         label.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.run { self.finish() }]))
@@ -262,15 +297,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var bg: ScrollingBackground!; var boss: BossNode?; var currentSong: Song!; var onExit: (() -> Void)?
     private var currentBeat = 0; private var score = 0; private var isGameOver = false; private let cam = SKCameraNode()
     private var lastTime: TimeInterval = 0; private let healthL = SKLabelNode(text: ""); private let scoreL = SKLabelNode(text: "")
-    
-    // Music-Driven Obstacle Tracking
-    private var activeObstaclesCount = 0
-    private let maxObstacles = 12
-    private var lastTypeOccurrences: [String: Int] = ["beam": 0, "aimed": 0, "pulsar": 0]
-    
+    private var activeObstaclesCount = 0; private let maxObstacles = 12; private var lastTypeOccurrences: [String: Int] = ["beam": 0, "aimed": 0, "pulsar": 0]
     override func didMove(to view: SKView) {
         physicsWorld.contactDelegate = self; backgroundColor = .black
-        beatManager = BeatManager(bpm: currentSong.bpm); rhythmEngine = RhythmEngine(bpm: currentSong.bpm)
+        beatManager = BeatManager(bpm: currentSong.bpm); rhythmEngine = RhythmEngine(bpm: currentSong.bpm, audioFileName: currentSong.audioFile)
         bg = ScrollingBackground(size: size); addChild(bg)
         camera = cam; cam.position = CGPoint(x: frame.midX, y: frame.midY); addChild(cam)
         player = PlayerNode(); player.position = CGPoint(x: 200, y: frame.midY); addChild(player)
@@ -283,95 +313,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func updateHealthUI() { healthL.text = "HP: \(player.health)"; scoreL.text = "SCORE: \(score)" }
     func shakeCamera(intensity: CGFloat) { cam.run(SKAction.sequence([SKAction.moveBy(x: intensity, y: intensity, duration: 0.04), SKAction.moveBy(x: -intensity*2, y: -intensity*2, duration: 0.04), SKAction.move(to: CGPoint(x: frame.midX, y: frame.midY), duration: 0.04)])) }
     func triggerGameOver() { isGameOver = true; ProgressManager.saveScore(score, for: currentSong.id); rhythmEngine.stop(); onExit?() }
-    
     private func handleBeat(_ index: Int) {
-        if isGameOver { return }; currentBeat = index; player.pulse(); rhythmEngine.playPulse(beatIndex: index)
-        score += 10; updateHealthUI()
-        
-        let musicState = rhythmEngine.getBeatState(index: index)
-        
-        // Music-Driven Generation
+        if isGameOver { return }; currentBeat = index; player.pulse(); rhythmEngine.playPulse(beatIndex: index); score += 10; updateHealthUI()
+        let state = rhythmEngine.getBeatState(index: index)
         if activeObstaclesCount < maxObstacles {
-            // Kick -> Horizontal Beam
-            if musicState.kick && index % 4 == 0 {
-                spawnBeam(at: CGPoint(x: frame.midX, y: frame.height * CGFloat(drand48())), horizontal: true)
-                lastTypeOccurrences["beam"] = index
-            }
-            
-            // Snare -> Vertical Beam
-            if musicState.snare && index % 4 == 2 {
-                spawnBeam(at: CGPoint(x: frame.width * CGFloat(drand48()), y: frame.midY), horizontal: false)
-                lastTypeOccurrences["beam"] = index
-            }
-            
-            // Bass Note -> Pulsar
-            if let note = musicState.bassNote {
-                let pos = CGPoint(x: frame.width * 0.7, y: frame.height * (0.2 + CGFloat(note) * 0.2))
-                spawnPulsar(at: pos)
-                lastTypeOccurrences["pulsar"] = index
-            }
-            
-            // Lead Active -> Aimed Shots
-            if musicState.leadActive && index % 2 == 0 {
-                spawnAimedShot(from: CGPoint(x: frame.width, y: frame.height * CGFloat(drand48())), target: player.position)
-                lastTypeOccurrences["aimed"] = index
-            }
+            if state.kick && index % 4 == 0 { spawnBeam(at: CGPoint(x: frame.midX, y: frame.height * CGFloat(drand48())), horizontal: true); lastTypeOccurrences["beam"] = index }
+            if state.snare && index % 4 == 2 { spawnBeam(at: CGPoint(x: frame.width * CGFloat(drand48()), y: frame.midY), horizontal: false); lastTypeOccurrences["beam"] = index }
+            if state.hornTrigger { spawnPulsar(at: CGPoint(x: frame.midX, y: frame.midY)); lastTypeOccurrences["pulsar"] = index }
+            if state.fiddleTrigger { spawnAimedShot(from: CGPoint(x: frame.width, y: frame.height * CGFloat(drand48())), target: player.position); lastTypeOccurrences["aimed"] = index }
         }
-        
-        // "Mercy" / Variety check: If an aimed shot hasn't happened in 16 beats, force one
-        if index - (lastTypeOccurrences["aimed"] ?? 0) > 16 {
-            spawnAimedShot(from: CGPoint(x: frame.width, y: frame.height * 0.5), target: player.position)
-            lastTypeOccurrences["aimed"] = index
-        }
-        
+        if index - (lastTypeOccurrences["aimed"] ?? 0) > 12 { spawnAimedShot(from: CGPoint(x: frame.width, y: frame.height * 0.5), target: player.position); lastTypeOccurrences["aimed"] = index }
         if index > currentSong.totalBeats - 64 && boss == nil { boss = BossNode(); boss?.position = CGPoint(x: frame.width - 200, y: frame.midY); addChild(boss!) }
         boss?.attack(scene: self, color: .red, phase: index / 8, beatInPhase: index % 8)
     }
-    
     private func spawnBeam(at pos: CGPoint, horizontal: Bool) {
-        activeObstaclesCount += 1
-        let size = horizontal ? CGSize(width: 4000, height: 30) : CGSize(width: 30, height: 4000)
-        let b = SKShapeNode(rectOf: size); b.fillColor = .red; b.position = pos
-        b.physicsBody = SKPhysicsBody(rectangleOf: size); b.physicsBody?.isDynamic = false; b.physicsBody?.categoryBitMask = 0x1 << 1; addChild(b)
+        activeObstaclesCount += 1; let size = horizontal ? CGSize(width: 4000, height: 30) : CGSize(width: 30, height: 4000)
+        let b = SKShapeNode(rectOf: size); b.fillColor = .red; b.position = pos; b.physicsBody = SKPhysicsBody(rectangleOf: size); b.physicsBody?.isDynamic = false; b.physicsBody?.categoryBitMask = 0x1 << 1; addChild(b)
         b.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.fadeOut(withDuration: 0.2), SKAction.run { self.activeObstaclesCount -= 1 }, SKAction.removeFromParent()]))
     }
-    
     private func spawnPulsar(at pos: CGPoint) {
-        activeObstaclesCount += 1
-        let p = SKShapeNode(circleOfRadius: 10); p.fillColor = .red; p.position = pos; addChild(p)
-        p.run(SKAction.sequence([
-            SKAction.group([SKAction.scale(to: 10.0, duration: 0.4), SKAction.fadeOut(withDuration: 0.4)]),
-            SKAction.run { 
-                let d = SKNode(); d.position = pos; d.physicsBody = SKPhysicsBody(circleOfRadius: 100); d.physicsBody?.categoryBitMask = 0x1 << 1; self.addChild(d)
-                d.run(SKAction.sequence([SKAction.wait(forDuration: 0.1), SKAction.removeFromParent()]))
-                self.activeObstaclesCount -= 1 
-            },
-            SKAction.removeFromParent()
-        ]))
+        activeObstaclesCount += 1; let p = SKShapeNode(circleOfRadius: 10); p.fillColor = .red; p.position = pos; addChild(p)
+        p.run(SKAction.sequence([SKAction.group([SKAction.scale(to: 10.0, duration: 0.4), SKAction.fadeOut(withDuration: 0.4)]), SKAction.run { 
+            let d = SKNode(); d.position = pos; d.physicsBody = SKPhysicsBody(circleOfRadius: 100); d.physicsBody?.categoryBitMask = 0x1 << 1; self.addChild(d)
+            d.run(SKAction.sequence([SKAction.wait(forDuration: 0.1), SKAction.removeFromParent()])); self.activeObstaclesCount -= 1 
+        }, SKAction.removeFromParent()]))
     }
-    
     private func spawnAimedShot(from pos: CGPoint, target: CGPoint) {
-        activeObstaclesCount += 1
-        let s = SKShapeNode(rectOf: CGSize(width: 20, height: 20)); s.fillColor = .red; s.position = pos
+        activeObstaclesCount += 1; let s = SKShapeNode(rectOf: CGSize(width: 20, height: 20)); s.fillColor = .red; s.position = pos
         s.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 20, height: 20)); s.physicsBody?.isDynamic = false; s.physicsBody?.categoryBitMask = 0x1 << 1; addChild(s)
         let dx = target.x - pos.x, dy = target.y - pos.y, dist = sqrt(dx*dx + dy*dy)
-        s.run(SKAction.sequence([
-            SKAction.moveBy(x: (dx/dist)*2000, y: (dy/dist)*2000, duration: 2.0),
-            SKAction.run { self.activeObstaclesCount -= 1 },
-            SKAction.removeFromParent()
-        ]))
+        s.run(SKAction.sequence([SKAction.moveBy(x: (dx/dist)*2000, y: (dy/dist)*2000, duration: 2.0), SKAction.run { self.activeObstaclesCount -= 1 }, SKAction.removeFromParent()]))
     }
     override func update(_ currentTime: TimeInterval) {
         if isGameOver { return }; if lastTime == 0 { lastTime = currentTime }; let dt = currentTime - lastTime; lastTime = currentTime
         bg.update(dt: dt, size: size); beatManager.update()
         player.position.x = max(20, min(frame.width - 20, player.position.x)); player.position.y = max(20, min(frame.height - 20, player.position.y))
-        
-        // Volume-relative progress check
-        if currentBeat >= currentSong.totalBeats { 
-            let songIdx = GameData.songs.firstIndex(where: { $0.id == currentSong.id }) ?? 0
-            ProgressManager.unlockNext(current: songIdx)
-            triggerWin() 
-        }
+        if currentBeat >= currentSong.totalBeats { ProgressManager.unlockNext(current: GameData.songs.firstIndex(where: { $0.id == currentSong.id }) ?? 0); triggerWin() }
     }
     private func triggerWin() { isGameOver = true; ProgressManager.saveScore(score, for: currentSong.id); rhythmEngine.stop(); onExit?() }
     #if os(macOS)
@@ -379,30 +356,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     #endif
 }
 
-// MARK: - App View
 struct SpriteKitContainer: NSViewRepresentable {
     let scene: SKScene
     func makeNSView(context: Context) -> SKView { let v = SKView(); v.preferredFramesPerSecond = 120; v.presentScene(scene); return v }
     func updateNSView(_ nsView: SKView, context: Context) { if nsView.scene != scene { nsView.presentScene(scene) } }
 }
-
 struct ContentView: View {
     @State private var currentScene: SKScene?
-    var body: some View {
-        ZStack { if let s = currentScene { SpriteKitContainer(scene: s).ignoresSafeArea() } }
-        .background(Color.black).onAppear {
-            #if os(macOS)
-            if let w = NSApplication.shared.windows.first { w.toggleFullScreen(nil) }
-            #endif
-            showSplash()
-        }
-    }
+    var body: some View { ZStack { if let s = currentScene { SpriteKitContainer(scene: s).ignoresSafeArea() } }.background(Color.black).onAppear { 
+        #if os(macOS)
+        if let w = NSApplication.shared.windows.first { w.toggleFullScreen(nil) }
+        #endif
+        showSplash() 
+    } }
     func showSplash() { let s = SplashScreenScene(); s.size = CGSize(width: 1024, height: 768); s.scaleMode = .aspectFill; s.onFinished = { showMenu() }; currentScene = s }
     func showMenu() { let m = MenuScene(); m.size = CGSize(width: 1024, height: 768); m.scaleMode = .aspectFill; m.onSongSelected = { startGame(with: $0) }; currentScene = m }
     func startGame(with s: Song) { let g = GameScene(); g.size = CGSize(width: 1024, height: 768); g.scaleMode = .aspectFill; g.currentSong = s; g.onExit = { showMenu() }; currentScene = g }
 }
-
 @main
-struct BeatsAndShapesApp: App {
-    var body: some Scene { WindowGroup { ContentView() }.windowStyle(.hiddenTitleBar) }
-}
+struct BeatsAndShapesApp: App { var body: some Scene { WindowGroup { ContentView() }.windowStyle(.hiddenTitleBar) } }
